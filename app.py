@@ -1,357 +1,279 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diego's Options Profit Tracker</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        :root {
-            --bg: #0a0e17;
-            --card: #111827;
-            --accent: #00ff9d;
-            --accent2: #00ccff;
-            --text: #e0e0e0;
-            --text-light: #94a3b8;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: linear-gradient(180deg, #0a0e17 0%, #111827 100%);
-            color: var(--text);
-            min-height: 100vh;
-            padding: 2rem;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .title {
-            font-size: 2.8rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, #00ff9d, #00ccff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-        
-        .subtitle {
-            font-size: 1.1rem;
-            color: var(--text-light);
-            margin-top: 8px;
-        }
-        
-        .meta-bar {
-            background: #1a2338;
-            border-radius: 9999px;
-            padding: 12px 24px;
-            display: inline-flex;
-            align-items: center;
-            gap: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            margin: 0 auto;
-            display: block;
-            max-width: 420px;
-        }
-        
-        .week-container {
-            background: #111827;
-            border-radius: 24px;
-            padding: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 255, 157, 0.1);
-            margin-bottom: 2rem;
-        }
-        
-        .week-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #334155;
-            padding-bottom: 1rem;
-        }
-        
-        .progress-container {
-            background: #1a2338;
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .day-card {
-            background: #1a2338;
-            border-radius: 20px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border: 2px solid transparent;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
-        .day-card:hover {
-            border-color: #00ff9d;
-            transform: translateY(-4px);
-            box-shadow: 0 15px 30px rgba(0, 255, 157, 0.2);
-        }
-        
-        .day-name {
-            font-size: 1.4rem;
-            font-weight: 600;
-            min-width: 110px;
-        }
-        
-        .profit-number {
-            font-size: 2rem;
-            font-weight: 700;
-            flex: 1;
-        }
-        
-        .positive { color: #00ff9d; }
-        .negative { color: #ff5252; }
-        
-        .notes-preview {
-            font-size: 0.95rem;
-            color: var(--text-light);
-            flex: 2;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .form-card {
-            background: #1a2338;
-            border-radius: 20px;
-            padding: 2rem;
-            border: 2px solid #00ccff;
-            margin-top: 2rem;
-        }
-        
-        .month-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .month-card {
-            background: #111827;
-            border-radius: 20px;
-            padding: 1.8rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            border: 2px solid #334155;
-            cursor: pointer;
-        }
-        
-        .month-card:hover {
-            border-color: #00ff9d;
-            transform: scale(1.04);
-        }
-        
-        .month-name {
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .streak {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(0, 255, 157, 0.1);
-            color: #00ff9d;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        
-        .cloud {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #1a2338;
-            color: #00ccff;
-            padding: 10px 20px;
-            border-radius: 9999px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0, 204, 255, 0.3);
-            margin: 1rem 0;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="title">
-            📈 Diego's Options Profit Tracker
+import streamlit as st
+import pandas as pd
+from datetime import datetime, date, timedelta
+import calendar
+import os
+
+CSV_FILE = "trading_records.csv"
+
+st.set_page_config(
+    page_title="Diego Options Profit Tracker",
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ===================== CSS PROFESIONAL DARK FINANCE =====================
+st.markdown("""
+<style>
+    .main {background-color: #0a0e17; color: #e0e0e0;}
+    .stButton>button {
+        border-radius: 16px;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0, 255, 157, 0.3);}
+    
+    .metric-card {
+        background: #111827;
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid #334155;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .day-card {
+        background: #111827;
+        border-radius: 20px;
+        padding: 1.4rem;
+        margin-bottom: 1rem;
+        border: 2px solid #334155;
+        transition: all 0.3s ease;
+    }
+    .day-card:hover {
+        border-color: #00ff9d;
+        transform: translateY(-4px);
+    }
+    .profit-positive {color: #00ff9d; font-size: 1.8rem; font-weight: 700;}
+    .profit-negative {color: #ff5252; font-size: 1.8rem; font-weight: 700;}
+    .week-progress {
+        height: 12px;
+        background: #334155;
+        border-radius: 9999px;
+        overflow: hidden;
+        margin: 12px 0;
+    }
+    .cloud {
+        background: #1a2338;
+        color: #00ccff;
+        padding: 12px 24px;
+        border-radius: 9999px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(0, 204, 255, 0.25);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("📈 Diego's Options Profit Tracker")
+st.markdown("**Metas** — Diario: **$350** mínimo | **$750** ideal | Semanal: **$1,750**")
+
+# ===================== CARGAR / GUARDAR =====================
+def load_records():
+    if os.path.exists(CSV_FILE):
+        try:
+            df = pd.read_csv(CSV_FILE)
+            df["Fecha"] = pd.to_datetime(df["Fecha"]).dt.strftime("%Y-%m-%d")
+            return df.to_dict('records')
+        except:
+            return []
+    return []
+
+def save_records(records):
+    pd.DataFrame(records).to_csv(CSV_FILE, index=False)
+
+if "records" not in st.session_state:
+    st.session_state.records = load_records()
+
+# ===================== LOGIN SIMPLE =====================
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    st.subheader("🔑 Login")
+    pw = st.text_input("Contraseña", type="password", value="")
+    if st.button("Entrar"):
+        if pw == "1234":   # Cambia esto por una contraseña más segura en producción
+            st.session_state.logged_in = True
+            st.success("¡Bienvenido, Diego!")
+            st.rerun()
+        else:
+            st.error("Contraseña incorrecta")
+    st.stop()
+
+# ===================== FUNCIONES ÚTILES =====================
+def get_current_week():
+    today = date.today()
+    # Encontrar el lunes de esta semana
+    monday = today - timedelta(days=today.weekday())
+    days = []
+    for i in range(5):  # Lunes a Viernes
+        day = monday + timedelta(days=i)
+        days.append({
+            "fecha": day.strftime("%Y-%m-%d"),
+            "dia_nombre": day.strftime("%A"),
+            "dia_corto": day.strftime("%d %b"),
+            "fecha_obj": day
+        })
+    return days
+
+def get_week_profit(week_days):
+    records = {r["Fecha"]: r for r in st.session_state.records}
+    total = 0
+    for day in week_days:
+        if day["fecha"] in records:
+            total += records[day["fecha"]]["Profit"]
+    return round(total, 2)
+
+def get_day_record(fecha_str):
+    for r in st.session_state.records:
+        if r["Fecha"] == fecha_str:
+            return r
+    return None
+
+# ===================== SIDEBAR =====================
+st.sidebar.header("Navegación")
+pagina = st.sidebar.radio("Ir a:", ["Semana Actual", "Ver por Mes", "Resumen General"])
+
+st.sidebar.divider()
+if st.sidebar.button("🗑️ Limpiar TODO (prueba)"):
+    st.session_state.records = []
+    if os.path.exists(CSV_FILE):
+        os.remove(CSV_FILE)
+    st.success("Datos borrados")
+    st.rerun()
+
+st.sidebar.caption("Versión 5.0 • Professional Trading Journal")
+
+# ===================== PÁGINA: SEMANA ACTUAL =====================
+if pagina == "Semana Actual":
+    st.subheader("🏠 Semana Actual")
+    
+    week_days = get_current_week()
+    week_total = get_week_profit(week_days)
+    progreso = min(max(week_total / 1750 * 100, 0), 100)
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"**{week_days[0]['dia_corto']} — {week_days[4]['dia_corto']}**")
+    with col2:
+        st.metric("Total Semanal", f"${week_total:,.2f}", f"${week_total - 1750:,.2f}")
+    
+    # Barra de progreso
+    st.markdown(f"""
+    <div style="background:#1a2338; padding:1.5rem; border-radius:20px; margin:1rem 0;">
+        <div style="display:flex; justify-content:space-between; font-weight:600; margin-bottom:8px;">
+            <span>Progreso semanal</span>
+            <span>${week_total:,.0f} / $1,750</span>
         </div>
-        <div class="subtitle">Tu tracker profesional de opciones • Meta diaria $350 mínimo • $750 ideal</div>
-        
-        <div class="meta-bar" style="margin-top: 1.5rem;">
-            <span><strong>Meta semanal:</strong> <span style="color:#00ff9d;">$1,750</span></span>
-            <span style="color:#334155;">|</span>
-            <span><strong>Meta diaria:</strong> <span style="color:#00ff9d;">$350</span> mínimo • <span style="color:#00ccff;">$750</span> ideal</span>
-        </div>
+        <div class="week-progress"><div style="width:{progreso}%; height:100%; background:linear-gradient(90deg, #00ff9d, #00ccff);"></div></div>
     </div>
+    """, unsafe_allow_html=True)
+    
+    if week_total >= 1750:
+        st.success("🎉 ¡Meta semanal alcanzada!")
+    elif 1750 - week_total > 0:
+        st.markdown(f"""
+        <div class="cloud">
+            ☁️ Aún faltan <strong>${1750 - week_total:,.0f}</strong> para completar la meta semanal
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.divider()
+    st.subheader("Días de la semana")
+    
+    for day in week_days:
+        record = get_day_record(day["fecha"])
+        profit = record["Profit"] if record else 0.0
+        notas = record["Notas"] if record else "Sin registro aún"
+        
+        color_class = "profit-positive" if profit >= 0 else "profit-negative"
+        
+        with st.container():
+            col_dia, col_profit, col_notas, col_btn = st.columns([1.2, 1.3, 3, 1])
+            with col_dia:
+                st.markdown(f"**{day['dia_nombre'].capitalize()}**<br><small>{day['dia_corto']}</small>", unsafe_allow_html=True)
+            with col_profit:
+                st.markdown(f"<span class='{color_class}'>${profit:,.2f}</span>", unsafe_allow_html=True)
+            with col_notas:
+                st.caption(notas[:80] + "..." if len(notas) > 80 else notas)
+            with col_btn:
+                if st.button("Editar", key=f"edit_{day['fecha']}"):
+                    st.session_state.editing_date = day["fecha"]
+                    st.session_state.editing_profit = profit
+                    st.session_state.editing_notas = notas
+                    st.rerun()
+    
+    # Formulario de edición (modal)
+    if "editing_date" in st.session_state:
+        fecha_edit = st.session_state.editing_date
+        st.divider()
+        st.subheader(f"✏️ Editando: {fecha_edit}")
+        
+        profit = st.number_input("Profit del día ($)", value=st.session_state.editing_profit, step=10.0)
+        notas = st.text_area("Notas / Operaciones detalladas", value=st.session_state.editing_notas)
+        
+        col_save, col_cancel = st.columns(2)
+        with col_save:
+            if st.button("💾 Guardar", type="primary", use_container_width=True):
+                # Actualizar o crear
+                record = get_day_record(fecha_edit)
+                if record:
+                    record["Profit"] = round(profit, 2)
+                    record["Notas"] = notas
+                else:
+                    st.session_state.records.append({
+                        "Fecha": fecha_edit,
+                        "Día": datetime.strptime(fecha_edit, "%Y-%m-%d").strftime("%A"),
+                        "Profit": round(profit, 2),
+                        "Notas": notas
+                    })
+                save_records(st.session_state.records)
+                st.success("Guardado correctamente")
+                del st.session_state.editing_date
+                st.rerun()
+        with col_cancel:
+            if st.button("Cancelar", use_container_width=True):
+                del st.session_state.editing_date
+                st.rerun()
 
-    <!-- SEMANA ACTUAL -->
-    <div class="week-container">
-        <div class="week-header">
-            <h2>🏠 Semana Actual • 30 Mar - 3 Abr 2026</h2>
-            <div class="streak">🔥 3 días consecutivos con profit</div>
-        </div>
+# ===================== PÁGINA: VER POR MES =====================
+elif pagina == "Ver por Mes":
+    st.subheader("📅 Análisis por Mes")
+    
+    año = st.selectbox("Año", range(2025, 2028), index=1)
+    meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+    mes = st.selectbox("Mes", range(1,13), format_func=lambda x: meses[x-1])
+    
+    # Aquí puedes expandir más adelante con grid de semanas del mes
+    st.info("Vista de mes en desarrollo. Por ahora muestra el resumen básico.")
+    
+    # Placeholder para futuro desarrollo (semanas dentro del mes)
+    st.write("Próximamente: Grid de semanas + detalle día a día del mes seleccionado.")
 
-        <!-- Progress semanal -->
-        <div class="progress-container">
-            <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-weight:600;">
-                <span>Progreso semanal</span>
-                <span><strong>$1,691</strong> / $1,750</span>
-            </div>
-            <div style="height:18px; background:#334155; border-radius:9999px; overflow:hidden;">
-                <div style="width:96.6%; height:100%; background:linear-gradient(90deg, #00ff9d, #00ccff);"></div>
-            </div>
-            <div class="cloud" style="margin-top:1rem;">
-                ☁️ Faltan <strong>$59</strong> para completar la meta semanal
-            </div>
-        </div>
+# ===================== PÁGINA: RESUMEN GENERAL =====================
+else:
+    st.subheader("📊 Resumen General")
+    if st.session_state.records:
+        df = pd.DataFrame(st.session_state.records)
+        df["Fecha"] = pd.to_datetime(df["Fecha"])
+        total = df["Profit"].sum()
+        dias = len(df)
+        promedio = total / dias if dias > 0 else 0
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Ganado", f"${total:,.2f}")
+        col2.metric("Promedio Diario", f"${promedio:,.2f}")
+        col3.metric("Días Registrados", dias)
+        
+        import plotly.express as px
+        fig = px.bar(df, x="Fecha", y="Profit", title="Profit Diario", template="plotly_dark")
+        fig.add_hline(y=350, line_dash="dash", line_color="yellow")
+        fig.add_hline(y=750, line_dash="dash", line_color="orange")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Registra operaciones en 'Semana Actual' para ver el resumen.")
 
-        <!-- Días de la semana -->
-        <h3 style="margin-bottom:1rem; color:#60a5fa;">Días de la semana</h3>
-        
-        <!-- Lunes -->
-        <div class="day-card">
-            <div class="day-name">Lunes<br><span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">30 Mar</span></div>
-            <div class="profit-number positive">$450</div>
-            <div class="notes-preview">3x SPY Calls 0DTE + 1x QQQ Put...</div>
-            <button onclick="editDay('2026-03-30')" style="background:#00ff9d; color:#000; border:none; padding:12px 24px; border-radius:12px; font-weight:600; cursor:pointer;">Editar</button>
-        </div>
-        
-        <!-- Martes -->
-        <div class="day-card">
-            <div class="day-name">Martes<br><span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">31 Mar</span></div>
-            <div class="profit-number positive">$550</div>
-            <div class="notes-preview">2x NVDA Calls...</div>
-            <button onclick="editDay('2026-03-31')" style="background:#00ff9d; color:#000; border:none; padding:12px 24px; border-radius:12px; font-weight:600; cursor:pointer;">Editar</button>
-        </div>
-        
-        <!-- Miércoles -->
-        <div class="day-card">
-            <div class="day-name">Miércoles<br><span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">01 Abr</span></div>
-            <div class="profit-number negative">-$359</div>
-            <div class="notes-preview">Stop loss en TSLA...</div>
-            <button onclick="editDay('2026-04-01')" style="background:#00ff9d; color:#000; border:none; padding:12px 24px; border-radius:12px; font-weight:600; cursor:pointer;">Editar</button>
-        </div>
-        
-        <!-- Jueves -->
-        <div class="day-card">
-            <div class="day-name">Jueves<br><span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">02 Abr</span></div>
-            <div class="profit-number positive">$850</div>
-            <div class="notes-preview">Gran día en QQQ...</div>
-            <button onclick="editDay('2026-04-02')" style="background:#00ff9d; color:#000; border:none; padding:12px 24px; border-radius:12px; font-weight:600; cursor:pointer;">Editar</button>
-        </div>
-        
-        <!-- Viernes -->
-        <div class="day-card">
-            <div class="day-name">Viernes<br><span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">03 Abr</span></div>
-            <div class="profit-number positive">$200</div>
-            <div class="notes-preview">Cierre de posiciones...</div>
-            <button onclick="editDay('2026-04-03')" style="background:#00ff9d; color:#000; border:none; padding:12px 24px; border-radius:12px; font-weight:600; cursor:pointer;">Editar</button>
-        </div>
-
-        <!-- Resultado final de la semana (solo viernes) -->
-        <div style="margin-top:2rem; background:#052e16; border-radius:20px; padding:1.5rem; text-align:center; border:2px solid #00ff9d;">
-            <strong style="color:#00ff9d; font-size:1.3rem;">🎉 Meta semanal alcanzada</strong><br>
-            <span style="font-size:2.2rem; font-weight:700; color:#00ff9d;">+$1,691</span><br>
-            <span style="color:#94a3b8;">Superaste la meta de $1,750 por <strong style="color:#ff5252;">-$59</strong> (casi listo)</span>
-        </div>
-    </div>
-
-    <!-- FORMULARIO DE EDICIÓN (aparece al hacer clic) -->
-    <div id="editForm" class="form-card" style="display:none;">
-        <h3 id="editingTitle" style="margin-bottom:1rem;">Editando: Lunes 30 Mar 2026</h3>
-        
-        <div style="display:grid; grid-template-columns:1fr 2fr; gap:2rem;">
-            <div>
-                <label style="display:block; margin-bottom:8px; font-weight:500;">Profit del día ($)</label>
-                <input type="number" id="profitInput" value="450" step="10" style="width:100%; padding:14px; border-radius:12px; background:#1a2338; border:1px solid #334155; color:white; font-size:1.4rem;">
-            </div>
-            <div>
-                <label style="display:block; margin-bottom:8px; font-weight:500;">Notas / Operaciones detalladas</label>
-                <textarea id="notesInput" rows="3" style="width:100%; padding:14px; border-radius:12px; background:#1a2338; border:1px solid #334155; color:white; resize:none;">3x SPY Calls 0DTE + 1x QQQ Put...</textarea>
-            </div>
-        </div>
-        
-        <div style="margin-top:2rem; display:flex; gap:1rem;">
-            <button onclick="saveEdit()" style="flex:1; background:linear-gradient(90deg,#00ff9d,#00ccff); color:#000; border:none; padding:16px; border-radius:16px; font-size:1.1rem; font-weight:700;">💾 GUARDAR CAMBIOS</button>
-            <button onclick="cancelEdit()" style="flex:1; background:#334155; color:white; border:none; padding:16px; border-radius:16px; font-size:1.1rem;">Cancelar</button>
-        </div>
-    </div>
-
-    <!-- MES VIEW (ejemplo de cómo se vería el grid) -->
-    <h2 style="margin:3rem 0 1.5rem; color:#60a5fa;">📅 Resumen por Mes • 2026</h2>
-    <div class="month-grid">
-        <!-- Marzo -->
-        <div class="month-card" onclick="viewMonth(3)">
-            <div class="month-name">Marzo</div>
-            <div style="font-size:2.2rem; font-weight:700; color:#00ff9d;">$8,420</div>
-            <div style="margin:8px 0; color:#94a3b8;">Meta mensual: $7,700</div>
-            <div style="height:8px; background:#334155; border-radius:9999px;"><div style="width:109%; height:100%; background:#00ff9d;"></div></div>
-            <div style="margin-top:12px; color:#00ff9d; font-weight:600;">+9% sobre la meta</div>
-        </div>
-        
-        <!-- Abril -->
-        <div class="month-card" onclick="viewMonth(4)">
-            <div class="month-name">Abril</div>
-            <div style="font-size:2.2rem; font-weight:700; color:#ff5252;">$1,240</div>
-            <div style="margin:8px 0; color:#94a3b8;">Meta mensual: $8,050</div>
-            <div style="height:8px; background:#334155; border-radius:9999px;"><div style="width:15%; height:100%; background:#ff5252;"></div></div>
-            <div style="margin-top:12px; color:#ff5252; font-weight:600;">-85% (en progreso)</div>
-        </div>
-        
-        <!-- Mayo (y así sucesivamente) -->
-        <div class="month-card" onclick="viewMonth(5)">
-            <div class="month-name">Mayo</div>
-            <div style="font-size:2.2rem; font-weight:700;">$0</div>
-            <div style="margin:8px 0; color:#94a3b8;">Meta mensual: $7,350</div>
-            <div style="height:8px; background:#334155; border-radius:9999px;"></div>
-            <div style="margin-top:12px; color:#64748b;">Aún no registrado</div>
-        </div>
-    </div>
-
-    <script>
-        function editDay(date) {
-            document.getElementById('editForm').style.display = 'block';
-            document.getElementById('editingTitle').innerHTML = `Editando: ${date}`;
-            // Aquí iría la lógica real de prellenado desde Python/Streamlit
-        }
-        
-        function saveEdit() {
-            alert('✅ Cambios guardados correctamente (en la versión real de Streamlit se actualiza el CSV y recarga la página)');
-            document.getElementById('editForm').style.display = 'none';
-            // En la app real: st.rerun()
-        }
-        
-        function cancelEdit() {
-            document.getElementById('editForm').style.display = 'none';
-        }
-        
-        function viewMonth(mes) {
-            alert(`Abriendo detalle completo del mes ${mes} (semanas + días + resumen detallado)`);
-            // En Streamlit real: session_state.selected_month = mes; st.rerun()
-        }
-    </script>
-</body>
-</html>
+st.caption("💼 Diego Options Trading Journal • Datos guardados permanentemente")
