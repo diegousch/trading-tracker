@@ -190,4 +190,3 @@ if st.sidebar.button("🗑️ Limpiar TODO (prueba)"):
     st.rerun()
 
 st.sidebar.caption("Versión 3.0 - Datos permanentes")
-        
