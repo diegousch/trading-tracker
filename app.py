@@ -13,14 +13,32 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ===================== CSS PROFESIONAL =====================
+# ===================== CSS PROFESIONAL ACTUALIZADO =====================
 st.markdown("""
 <style>
     .main {background-color: #0a0e17; color: #e0e0e0;}
-    .stButton>button {border-radius: 16px; font-weight: 600; padding: 0.75rem 1.5rem;}
+    .stButton>button {border-radius: 16px; font-weight: 600; padding: 0.75rem 1.5rem; transition: all 0.3s ease;}
     .stButton>button:hover {transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0, 255, 157, 0.3);}
     
-    .metric-card, .month-card, .week-card {
+    /* BOTONES QUE PARECEN TARJETAS DEL GRID */
+    .stButton > button {
+        background-color: #111827 !important;
+        border: 3px solid #eab308 !important;
+        color: #fafafa !important;
+        font-size: 1.15rem !important;
+        font-weight: 600 !important;
+        height: 155px !important;
+        white-space: pre-wrap !important;
+        line-height: 1.35 !important;
+        text-align: center !important;
+        box-shadow: 0 8px 20px rgba(234, 179, 8, 0.2) !important;
+    }
+    .stButton > button:hover {
+        border-color: #00ff9d !important;
+        background-color: #1a2338 !important;
+    }
+    
+    .metric-card, .week-card {
         background: #111827;
         border-radius: 20px;
         padding: 1.5rem;
@@ -39,10 +57,6 @@ st.markdown("""
     
     .profit-positive {color: #00ff9d; font-size: 1.75rem; font-weight: 700;}
     .profit-negative {color: #ff5252; font-size: 1.75rem; font-weight: 700;}
-    
-    .month-grid {display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;}
-    .month-card {cursor: pointer; transition: all 0.3s ease;}
-    .month-card:hover {border-color: #00ff9d; transform: scale(1.04);}
     
     .cloud {
         background: #1a2338;
@@ -112,6 +126,25 @@ def get_month_days(año, mes):
     dias_laborables = sum(1 for d in range(1, num_dias+1) if date(año, mes, d).weekday() < 5)
     return dias_laborables
 
+def get_month_weeks(año, mes):
+    """Devuelve listas de lunes a viernes dentro del mes"""
+    first_day = date(año, mes, 1)
+    # Primer lunes del mes o posterior
+    days_to_monday = (0 - first_day.weekday()) % 7
+    current_monday = first_day + timedelta(days=days_to_monday)
+    
+    weeks = []
+    while current_monday.month == mes:
+        week_days = []
+        for i in range(5):
+            day = current_monday + timedelta(days=i)
+            if day.month == mes:
+                week_days.append(day)
+        if week_days:
+            weeks.append(week_days)
+        current_monday += timedelta(days=7)
+    return weeks
+
 # ===================== SIDEBAR =====================
 st.sidebar.header("Navegación")
 pagina = st.sidebar.radio("Ir a:", ["Semana Actual", "Ver por Mes", "Resumen General"])
@@ -124,8 +157,9 @@ if st.sidebar.button("🗑️ Limpiar TODO (prueba)"):
     st.success("Datos borrados")
     st.rerun()
 
-# ===================== SEMANA ACTUAL =====================
+# ===================== SEMANA ACTUAL (sin cambios) =====================
 if pagina == "Semana Actual":
+    # ... (código anterior sin cambios, se mantiene igual)
     st.subheader("🏠 Semana Actual")
     week_dates = get_current_week()
     week_total = get_week_profit(week_dates)
@@ -157,15 +191,12 @@ if pagina == "Semana Actual":
 
     st.divider()
     st.subheader("Días de la semana")
-
     for d in week_dates:
         fecha_str = d.strftime("%Y-%m-%d")
         record = get_day_record(fecha_str)
         profit = record["Profit"] if record else 0.0
         notas = record["Notas"] if record else "Sin notas"
-
         color_class = "profit-positive" if profit >= 0 else "profit-negative"
-
         col_d, col_p, col_n, col_b = st.columns([1.2, 1.4, 3.5, 1])
         with col_d:
             st.markdown(f"**{d.strftime('%A')}**<br><small>{d.strftime('%d %b')}</small>", unsafe_allow_html=True)
@@ -180,14 +211,12 @@ if pagina == "Semana Actual":
                 st.session_state.editing_notas = notas
                 st.rerun()
 
-    # Formulario de edición
     if "editing_date" in st.session_state:
         fecha = st.session_state.editing_date
         st.divider()
         st.subheader(f"✏️ Editando {fecha}")
         profit = st.number_input("Profit del día ($)", value=st.session_state.editing_profit, step=10.0)
         notas = st.text_area("Notas / Operaciones detalladas", value=st.session_state.editing_notas)
-
         c1, c2 = st.columns(2)
         with c1:
             if st.button("💾 Guardar", type="primary", use_container_width=True):
@@ -205,119 +234,101 @@ if pagina == "Semana Actual":
                 save_records(st.session_state.records)
                 st.success("Guardado correctamente")
                 for key in ["editing_date", "editing_profit", "editing_notas"]:
-                    if key in st.session_state:
-                        del st.session_state[key]
+                    st.session_state.pop(key, None)
                 st.rerun()
         with c2:
             if st.button("Cancelar", use_container_width=True):
                 for key in ["editing_date", "editing_profit", "editing_notas"]:
-                    if key in st.session_state:
-                        del st.session_state[key]
+                    st.session_state.pop(key, None)
                 st.rerun()
 
-# ===================== VER POR MES (NUEVA VERSIÓN COMPLETA) =====================
+# ===================== VER POR MES - VERSIÓN MEJORADA =====================
 elif pagina == "Ver por Mes":
     st.subheader("📅 Ver por Mes")
 
-    año = st.selectbox("Año", range(2025, 2029), index=1)
-    meses_nombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-    mes_seleccionado = st.selectbox("Selecciona un mes", range(1,13), format_func=lambda x: meses_nombres[x-1])
+    # Selector de año limpio y bonito
+    año = st.selectbox("Año", range(2026, 2031), index=0)
 
-    if "selected_month" not in st.session_state or st.session_state.get("selected_month") != (año, mes_seleccionado):
-        st.session_state.selected_month = (año, mes_seleccionado)
-        st.session_state.show_month_detail = True
-
-    # Grid de todos los meses (para navegación rápida)
     st.markdown("### Todos los meses del año")
-    month_grid = st.columns(4)
-    for i, mes_name in enumerate(meses_nombres):
-        with month_grid[i % 4]:
-            dias_lab = get_month_days(año, i+1)
-            meta_mensual = 350 * dias_lab
-            # Calcular total real del mes
-            datos_mes = [r for r in st.session_state.records if r["Fecha"].startswith(f"{año}-{i+1:02d}")]
-            total_mes = sum(r["Profit"] for r in datos_mes)
-            
-            color = "#00ff9d" if total_mes >= meta_mensual else "#ff5252" if total_mes < 0 else "#eab308"
-            
-            st.markdown(f"""
-            <div class="month-card" style="border: 2px solid {color};" onclick="window.location.reload();">
-                <h3 style="text-align:center;">{mes_name}</h3>
-                <div style="font-size:2rem; font-weight:700; text-align:center; color:{color};">${total_mes:,.0f}</div>
-                <div style="text-align:center; color:#94a3b8; font-size:0.95rem;">Meta: ${meta_mensual:,.0f}</div>
-            </div>
-            """, unsafe_allow_html=True)
 
-    st.divider()
+    meses_nombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+    grid_cols = st.columns(4)
 
-    # Detalle del mes seleccionado
-    st.subheader(f"{meses_nombres[mes_seleccionado-1]} {año}")
-    dias_lab = get_month_days(año, mes_seleccionado)
-    meta_mensual = 350 * dias_lab
+    for i in range(12):
+        mes_num = i + 1
+        name = meses_nombres[i]
+        dias_lab = get_month_days(año, mes_num)
+        meta_mensual = 350 * dias_lab
+        datos_mes = [r for r in st.session_state.records if r["Fecha"].startswith(f"{año}-{mes_num:02d}")]
+        total_mes = sum(r.get("Profit", 0) for r in datos_mes)
 
-    datos_mes = [r for r in st.session_state.records if r["Fecha"].startswith(f"{año}-{mes_seleccionado:02d}")]
-    total_mes = sum(r["Profit"] for r in datos_mes)
+        with grid_cols[i % 4]:
+            if st.button(
+                f"{name}\n\n${total_mes:,.0f}\nMeta: ${meta_mensual:,.0f}",
+                key=f"month_btn_{año}_{mes_num}",
+                use_container_width=True
+            ):
+                st.session_state.selected_año = año
+                st.session_state.selected_mes = mes_num
+                st.rerun()
 
-    delta = total_mes - meta_mensual
-    st.metric("Total del mes", f"${total_mes:,.2f}", f"${delta:,.2f} vs meta")
+    # ==================== DETALLE DEL MES (solo si se seleccionó un mes) ====================
+    if "selected_mes" in st.session_state and "selected_año" in st.session_state and st.session_state.selected_año == año:
+        mes = st.session_state.selected_mes
+        st.divider()
+        st.subheader(f"{meses_nombres[mes-1]} {año}")
 
-    if total_mes >= meta_mensual:
-        st.success(f"🎯 Meta mensual alcanzada (+${delta:,.0f} adicionales)")
+        dias_lab = get_month_days(año, mes)
+        meta_mensual = 350 * dias_lab
+        datos_mes = [r for r in st.session_state.records if r["Fecha"].startswith(f"{año}-{mes:02d}")]
+        total_mes = sum(r.get("Profit", 0) for r in datos_mes)
+        delta = total_mes - meta_mensual
+
+        st.metric("Total del mes", f"${total_mes:,.2f}", f"${delta:,.2f} vs meta")
+
+        if total_mes >= meta_mensual:
+            st.success(f"🎯 Meta mensual alcanzada (+${delta:,.0f} adicionales)")
+        else:
+            st.error(f"❌ Meta mensual no alcanzada (faltan ${abs(delta):,.0f})")
+
+        st.subheader("Semanas del mes")
+        weeks = get_month_weeks(año, mes)
+
+        for idx, week_days in enumerate(weeks, 1):
+            if not week_days:
+                continue
+            week_start = week_days[0].strftime("%d %b")
+            week_end = week_days[-1].strftime("%d %b")
+            week_total = get_week_profit(week_days)
+
+            st.markdown(f"**Semana {idx}** ({week_start} - {week_end}) — Total: **${week_total:,.2f}**")
+
+            for day in week_days:
+                fecha_str = day.strftime("%Y-%m-%d")
+                record = get_day_record(fecha_str)
+                profit = record["Profit"] if record else 0.0
+                notas = record["Notas"] if record else "Sin registro"
+
+                color_class = "profit-positive" if profit >= 0 else "profit-negative"
+
+                col1, col2, col3, col4 = st.columns([1.2, 1.4, 3.8, 1])
+                with col1:
+                    st.markdown(f"**{day.strftime('%A')}**<br><small>{day.strftime('%d %b')}</small>", unsafe_allow_html=True)
+                with col2:
+                    st.markdown(f"<span class='{color_class}'>${profit:,.2f}</span>", unsafe_allow_html=True)
+                with col3:
+                    st.caption(notas)
+                with col4:
+                    if st.button("Editar", key=f"edit_month_{fecha_str}"):
+                        st.session_state.editing_date = fecha_str
+                        st.session_state.editing_profit = profit
+                        st.session_state.editing_notas = notas
+                        st.rerun()
+
     else:
-        st.error(f"❌ Meta mensual no alcanzada (faltan ${abs(delta):,.0f})")
+        st.info("👆 Haz clic en cualquier tarjeta de mes arriba para ver el detalle completo (semanas + días)")
 
-    # Semanas del mes
-    st.subheader("Semanas del mes")
-    cal = calendar.monthcalendar(año, mes_seleccionado)
-    
-    for semana_idx, semana in enumerate(cal):
-        # Filtrar solo días válidos (no 0)
-        dias_semana = [d for d in semana if d != 0]
-        if not dias_semana:
-            continue
-            
-        week_start = date(año, mes_seleccionado, dias_semana[0])
-        week_end = date(año, mes_seleccionado, dias_semana[-1]) if len(dias_semana) > 1 else week_start
-        
-        week_dates = []
-        for d in range(5):  # Lunes a Viernes
-            try:
-                day_date = week_start + timedelta(days=d)
-                if day_date.month == mes_seleccionado and day_date.weekday() < 5:
-                    week_dates.append(day_date)
-            except:
-                pass
-        
-        if not week_dates:
-            continue
-            
-        week_total = get_week_profit(week_dates)
-        
-        st.markdown(f"**Semana {semana_idx+1}** ({week_start.strftime('%d %b')} - {week_end.strftime('%d %b')}) — Total: **${week_total:,.2f}**")
-        
-        for day in week_dates:
-            fecha_str = day.strftime("%Y-%m-%d")
-            record = get_day_record(fecha_str)
-            profit = record["Profit"] if record else 0.0
-            notas = record["Notas"] if record else "Sin registro"
-            
-            color_class = "profit-positive" if profit >= 0 else "profit-negative"
-            
-            col1, col2, col3, col4 = st.columns([1.1, 1.3, 3.8, 1])
-            with col1:
-                st.write(f"{day.strftime('%A')}<br><small>{day.strftime('%d %b')}</small>", unsafe_allow_html=True)
-            with col2:
-                st.markdown(f"<span class='{color_class}'>${profit:,.2f}</span>", unsafe_allow_html=True)
-            with col3:
-                st.caption(notas)
-            with col4:
-                if st.button("Editar", key=f"edit_m_{fecha_str}"):
-                    st.session_state.editing_date = fecha_str
-                    st.session_state.editing_profit = profit
-                    st.session_state.editing_notas = notas
-                    st.rerun()
-
-# ===================== RESUMEN GENERAL =====================
+# ===================== RESUMEN GENERAL (sin cambios) =====================
 else:
     st.subheader("📊 Resumen General")
     if st.session_state.records:
@@ -336,4 +347,4 @@ else:
     else:
         st.info("Registra operaciones para ver gráficos.")
 
-st.caption("💼 Diego Options Trading Journal • Versión 6.0")
+st.caption("💼 Diego Options Trading Journal • Versión 6.1 - Grid de meses mejorado")
