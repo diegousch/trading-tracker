@@ -9,16 +9,16 @@ CSV_FILE = "trading_records.csv"
 st.set_page_config(
     page_title="Diego Options Profit Tracker",
     page_icon="📈",
-    layout="centered",
+    layout="wide",                    # ← Cambiado a wide para que el grid de 4 columnas se vea perfecto
     initial_sidebar_state="collapsed"
 )
 
-# ===================== CSS MINIMALISTA PREMIUM (versión final) =====================
+# ===================== CSS MINIMALISTA + GRID PERFECTO =====================
 st.markdown("""
 <style>
     .main {background-color: #0a0e17; color: #e0e0e0;}
     
-    /* Título principal */
+    /* Título elegante */
     .title {
         font-size: 2.9rem;
         font-weight: 700;
@@ -29,7 +29,7 @@ st.markdown("""
         margin-bottom: 0.3rem;
     }
     
-    /* Login */
+    /* Login minimalista */
     .login-box {
         max-width: 420px;
         margin: 120px auto 40px;
@@ -40,48 +40,45 @@ st.markdown("""
         border: 1px solid #334155;
     }
     
-    /* Tarjetas generales */
-    .card {
-        background: #111827;
-        border-radius: 20px;
-        padding: 1.6rem;
-        border: 1px solid #334155;
-        transition: all 0.3s ease;
+    /* Grid de meses - 4 columnas perfectas */
+    .month-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.2rem;
+        margin-top: 1rem;
     }
-    .card:hover {border-color: #00ff9d; transform: translateY(-3px);}
-    
-    /* Meses */
     .month-card {
         background: #111827;
         border: 2px solid #334155;
         border-radius: 20px;
-        padding: 1.8rem 1rem;
+        padding: 1.6rem 1rem;
         text-align: center;
-        height: 100%;
         transition: all 0.3s ease;
+        cursor: pointer;
     }
     .month-card:hover {
         border-color: #00ff9d;
-        box-shadow: 0 15px 30px rgba(0, 255, 157, 0.15);
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(0, 255, 157, 0.2);
     }
     
-    /* Días de la semana */
-    .day-card {
+    /* Días de la semana - compactos y horizontales */
+    .day-bar {
         background: #1a2338;
-        border-radius: 18px;
-        padding: 1.4rem;
-        margin-bottom: 1rem;
+        border-radius: 16px;
+        padding: 1rem 1.4rem;
+        margin-bottom: 0.8rem;
         border: 2px solid #334155;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 1.5rem;
+        transition: all 0.3s ease;
     }
-    .day-card:hover {border-color: #00ff9d;}
+    .day-bar:hover {border-color: #00ff9d;}
     
     .profit-positive {color: #00ff9d; font-size: 1.85rem; font-weight: 700;}
     .profit-negative {color: #ff5252; font-size: 1.85rem; font-weight: 700;}
     
-    /* Barra de progreso semanal */
     .progress-bar {
         height: 14px;
         background: #334155;
@@ -100,12 +97,6 @@ st.markdown("""
         align-items: center;
         gap: 10px;
         box-shadow: 0 4px 15px rgba(0, 204, 255, 0.25);
-    }
-    
-    .stButton>button {
-        border-radius: 16px;
-        font-weight: 600;
-        padding: 0.8rem 1.6rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -130,13 +121,10 @@ if "records" not in st.session_state:
 # ===================== LOGIN MINIMALISTA =====================
 if not st.session_state.get("logged_in", False):
     st.markdown('<div class="login-box">', unsafe_allow_html=True)
-    
     st.markdown('<p class="title">📈 Diego\'s Options Profit Tracker</p>', unsafe_allow_html=True)
     st.markdown('<p style="color:#94a3b8; font-size:1.15rem; margin-bottom:2rem;">Tu tracker profesional de opciones</p>', unsafe_allow_html=True)
-    
     st.subheader("🔑 Iniciar sesión")
     pw = st.text_input("Contraseña", type="password", placeholder="Ingresa tu contraseña", label_visibility="collapsed")
-    
     if st.button("Entrar", type="primary", use_container_width=True):
         if pw == "1234":
             st.session_state.logged_in = True
@@ -144,7 +132,6 @@ if not st.session_state.get("logged_in", False):
             st.rerun()
         else:
             st.error("Contraseña incorrecta")
-    
     st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
@@ -180,7 +167,7 @@ def get_month_weeks(año, mes):
         current += timedelta(days=7)
     return weeks
 
-# ===================== SIDEBAR MINIMAL =====================
+# ===================== SIDEBAR =====================
 st.sidebar.markdown("### Menú")
 pagina = st.sidebar.radio("", ["Semana Actual", "Ver por Mes", "Resumen General"], label_visibility="collapsed")
 
@@ -191,7 +178,7 @@ if st.sidebar.button("🗑️ Limpiar todo (prueba)"):
     st.success("Todo limpiado")
     st.rerun()
 
-# ===================== PÁGINA: SEMANA ACTUAL (MINIMALISTA) =====================
+# ===================== SEMANA ACTUAL - LAYOUT COMPACTO =====================
 if pagina == "Semana Actual":
     st.markdown('<p class="title">Semana Actual</p>', unsafe_allow_html=True)
     
@@ -202,26 +189,25 @@ if pagina == "Semana Actual":
 
     st.markdown(f"**{week_dates[0].strftime('%d %b')} — {week_dates[4].strftime('%d %b %Y')}**")
     
-    # Progreso elegante
     st.markdown(f"""
-    <div class="card">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-            <span style="font-weight:600;">Progreso semanal</span>
-            <span style="font-weight:600;">${week_total:,.0f} / ${meta_semanal}</span>
+    <div style="background:#111827; padding:1.6rem; border-radius:20px; margin:1rem 0;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:600;">
+            <span>Progreso semanal</span>
+            <span>${week_total:,.0f} / ${meta_semanal}</span>
         </div>
         <div class="progress-bar"><div style="width:{progreso}%; height:100%; background:linear-gradient(90deg, #00ff9d, #00ccff);"></div></div>
     </div>
     """, unsafe_allow_html=True)
-    
+
     if week_total >= meta_semanal:
         st.success("🎉 Meta semanal completada")
     else:
         st.markdown(f'<div class="cloud">☁️ Faltan <strong>${meta_semanal - week_total:,.0f}</strong> para cerrar la semana</div>', unsafe_allow_html=True)
 
     st.divider()
-    
-    # Días de la semana (tarjetas limpias)
     st.subheader("Días de la semana")
+
+    # Layout horizontal por día (compacto)
     for day in week_dates:
         fecha_str = day.strftime("%Y-%m-%d")
         record = get_day_record(fecha_str)
@@ -230,29 +216,37 @@ if pagina == "Semana Actual":
         
         color_class = "profit-positive" if profit >= 0 else "profit-negative"
         
-        with st.container():
-            col_dia, col_profit, col_notas, col_edit = st.columns([1.3, 1.4, 3.5, 1])
-            with col_dia:
-                st.markdown(f"**{day.strftime('%A')}**<br><small>{day.strftime('%d %b')}</small>", unsafe_allow_html=True)
-            with col_profit:
-                st.markdown(f"<span class='{color_class}'>${profit:,.2f}</span>", unsafe_allow_html=True)
-            with col_notas:
-                st.caption(notas if len(notas) < 70 else notas[:67] + "...")
-            with col_edit:
-                if st.button("Editar", key=f"edit_w_{fecha_str}", use_container_width=True):
-                    st.session_state.editing_date = fecha_str
-                    st.session_state.editing_profit = profit
-                    st.session_state.editing_notas = notas
-                    st.rerun()
+        st.markdown(f"""
+        <div class="day-bar">
+            <div style="min-width:110px;">
+                <strong>{day.strftime('%A')}</strong><br>
+                <small>{day.strftime('%d %b')}</small>
+            </div>
+            <div style="flex:1; text-align:center;">
+                <span class="{color_class}">${profit:,.2f}</span>
+            </div>
+            <div style="flex:2; color:#94a3b8; font-size:0.95rem;">
+                {notas if len(notas) < 60 else notas[:57] + "..."}
+            </div>
+            <div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("Editar", key=f"edit_w_{fecha_str}", use_container_width=True):
+            st.session_state.editing_date = fecha_str
+            st.session_state.editing_profit = profit
+            st.session_state.editing_notas = notas
+            st.rerun()
+        
+        st.markdown('</div></div>', unsafe_allow_html=True)
 
-    # Formulario de edición (minimal)
+    # Formulario de edición
     if "editing_date" in st.session_state:
         fecha = st.session_state.editing_date
         st.divider()
-        st.subheader(f"Editando {fecha}")
+        st.subheader(f"✏️ Editando {fecha}")
         
-        profit = st.number_input("Profit del día ($)", value=st.session_state.editing_profit, step=10.0)
-        notas = st.text_area("Notas / Operaciones", value=st.session_state.editing_notas, height=120)
+        profit = st.number_input("Profit del día ($)", value=0.0, step=10.0, key="profit_input")  # ← Siempre inicia en 0
+        notas = st.text_area("Notas / Operaciones detalladas", value=st.session_state.editing_notas, height=120)
         
         c1, c2 = st.columns(2)
         with c1:
@@ -269,7 +263,7 @@ if pagina == "Semana Actual":
                         "Notas": notas
                     })
                 save_records(st.session_state.records)
-                st.success("Guardado")
+                st.success("✅ Guardado correctamente")
                 for k in ["editing_date", "editing_profit", "editing_notas"]:
                     st.session_state.pop(k, None)
                 st.rerun()
@@ -279,7 +273,7 @@ if pagina == "Semana Actual":
                     st.session_state.pop(k, None)
                 st.rerun()
 
-# ===================== PÁGINA: VER POR MES (ya mejorada) =====================
+# ===================== VER POR MES - GRID 4 COLUMNAS =====================
 elif pagina == "Ver por Mes":
     st.markdown('<p class="title">Ver por Mes</p>', unsafe_allow_html=True)
     
@@ -288,8 +282,10 @@ elif pagina == "Ver por Mes":
     st.markdown("### Todos los meses del año")
     
     meses_nombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-    cols = st.columns(4)
-
+    
+    # Grid CSS 4 columnas
+    st.markdown('<div class="month-grid">', unsafe_allow_html=True)
+    
     for i in range(12):
         mes_num = i + 1
         nombre = meses_nombres[i]
@@ -298,22 +294,26 @@ elif pagina == "Ver por Mes":
         datos = [r for r in st.session_state.records if r["Fecha"].startswith(f"{año}-{mes_num:02d}")]
         logrado = sum(r.get("Profit", 0) for r in datos)
 
-        with cols[i % 4]:
-            if st.button(
-                f"{nombre}\n\n"
-                f"Logrado: ${logrado:,.0f}\n"
-                f"Meta: ${meta:,.0f}",
-                key=f"mes_{año}_{mes_num}",
-                use_container_width=True
-            ):
-                st.session_state.selected_año = año
-                st.session_state.selected_mes = mes_num
-                st.rerun()
+        st.markdown(f"""
+        <div class="month-card" onclick="document.getElementById('mes_{año}_{mes_num}').click();">
+            <h3 style="margin:0 0 8px 0;">{nombre}</h3>
+            <div style="font-size:1.9rem; font-weight:700; color:#00ff9d;">${logrado:,.0f}</div>
+            <div style="color:#94a3b8; font-size:0.95rem;">Meta: ${meta:,.0f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Botón invisible para capturar el clic
+        if st.button("Seleccionar", key=f"mes_{año}_{mes_num}", use_container_width=True):
+            st.session_state.selected_año = año
+            st.session_state.selected_mes = mes_num
+            st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
+    # Detalle del mes
     if st.session_state.get("selected_año") == año and "selected_mes" in st.session_state:
         mes = st.session_state.selected_mes
         nombre_mes = meses_nombres[mes-1]
-        
         st.divider()
         st.subheader(f"{nombre_mes} {año}")
         
@@ -326,9 +326,9 @@ elif pagina == "Ver por Mes":
         st.metric("Total del mes", f"${total_mes:,.2f}", f"${delta:,.2f} vs meta")
 
         if total_mes >= meta_mensual:
-            st.success(f"🎯 Meta alcanzada (+${delta:,.0f} adicionales)")
+            st.success(f"🎯 Meta mensual alcanzada (+${delta:,.0f})")
         else:
-            st.error(f"❌ Meta no alcanzada (faltan ${abs(delta):,.0f})")
+            st.error(f"❌ Meta mensual no alcanzada (faltan ${abs(delta):,.0f})")
 
         st.subheader("Semanas del mes")
         weeks = get_month_weeks(año, mes)
@@ -360,20 +360,15 @@ elif pagina == "Ver por Mes":
                             st.session_state.editing_notas = notas
                             st.rerun()
 
-    else:
-        st.info("Haz clic en cualquier mes para ver semanas y días")
-
-# ===================== PÁGINA: RESUMEN GENERAL (minimalista) =====================
+# ===================== RESUMEN GENERAL =====================
 else:
     st.markdown('<p class="title">Resumen General</p>', unsafe_allow_html=True)
-    
     if st.session_state.records:
         df = pd.DataFrame(st.session_state.records)
         df["Fecha"] = pd.to_datetime(df["Fecha"])
         total = df["Profit"].sum()
         dias = len(df)
         promedio = total / dias if dias > 0 else 0
-        
         col1, col2, col3 = st.columns(3)
         col1.metric("Total ganado", f"${total:,.2f}")
         col2.metric("Promedio diario", f"${promedio:,.2f}")
@@ -385,6 +380,6 @@ else:
         fig.add_hline(y=750, line_dash="dash", line_color="#00ccff")
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("Aún no hay registros. Comienza en 'Semana Actual'.")
+        st.info("Aún no hay registros.")
 
-st.caption("💼 Diego Options Trading Journal • Versión 7.0 Minimal & Premium")
+st.caption("💼 Diego Options Trading Journal • Versión 7.1 - Grid perfecto + Semana compacta")
